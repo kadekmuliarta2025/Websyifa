@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurnal Online Syifa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+            font-weight: 500;
+            font-size: 2.5em;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #34495e;
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 12px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 1em;
+            margin-right: 10px;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.delete {
+            background-color: #e74c3c;
+        }
+        button.delete:hover {
+            background-color: #c0392b;
+        }
+        button.save {
+            background-color: #27ae60;
+        }
+        button.save:hover {
+            background-color: #229954;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #ecf0f1;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #3498db;
+        }
+        li.completed {
+            text-decoration: line-through;
+            background: #d5dbdb;
+            border-left-color: #27ae60;
+        }
+        .summary {
+            margin-top: 40px;
+        }
+        .summary-item {
+            background: #ecf0f1;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid #f39c12;
+            position: relative;
+        }
+        .summary-item h3 {
+            margin: 0 0 10px 0;
+            color: #34495e;
+        }
+        .summary-item ul {
+            margin: 0;
+        }
+        .summary-item button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Website Buat Cipaa</h1>
+        <p>Jurnal online buat syifa kesayangan ku, kmu kalo mau ngapain tulis disini biar ga lup</p>
+    </header>
+    
+    <div class="container">
+        <h2>Tambah Tugas Harian</h2>
+        <input type="text" id="taskInput" placeholder="hari ini ngapain sayang?...">
+        <button onclick="addTask()">Tambah</button>
+        
+        <h2>Daftar Tugas Hari Ini</h2>
+        <ul id="taskList"></ul>
+        
+        <div class="summary">
+            <h2>Rangkuman Kegiatan Harian</h2>
+            <div id="summaryList"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 the one and only cuma buat syifa ga boleh yang lain.</p>
+    </footer>
+
+    <script>
+        const taskInput = document.getElementById('taskInput');
+        const taskList = document.getElementById('taskList');
+        const summaryList = document.getElementById('summaryList');
+
+        // Get current date in YYYY-MM-DD format
+        function getCurrentDate() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+
+        // Load tasks and summary from localStorage
+        function loadTasks() {
+            const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.forEach(task => displayTask(task.text, task.completed));
+            loadSummary();
+        }
+
+        // Save tasks to localStorage
+        function saveTasks() {
+            const tasks = [];
+            document.querySelectorAll('#taskList li').forEach(li => {
+                tasks.push({
+                    text: li.querySelector('span').textContent,
+                    completed: li.classList.contains('completed')
+                });
+            });
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Load summary from localStorage
+        function loadSummary() {
+            const summary = JSON.parse(localStorage.getItem('summary')) || {};
+            summaryList.innerHTML = '';
+            for (const date in summary) {
+                const div = document.createElement('div');
+                div.className = 'summary-item';
+                div.innerHTML = `
+                    <h3>${date}</h3>
+                    <ul>${summary[date].map(task => `<li>${task}</li>`).join('')}</ul>
+                    <button class="delete" onclick="deleteSummary('${date}')">Hapus Rangkuman</button>
+                `;
+                summaryList.appendChild(div);
+            }
+        }
+
+        // Save to summary
+        function saveToSummary(taskText) {
+            const summary = JSON.parse(localStorage.getItem('summary')) || {};
+            const date = getCurrentDate();
+            if (!summary[date]) summary[date] = [];
+            summary[date].push(taskText);
+            localStorage.setItem('summary', JSON.stringify(summary));
+            loadSummary();
+        }
+
+        // Delete summary for a specific date
+        function deleteSummary(date) {
+            const summary = JSON.parse(localStorage.getItem('summary')) || {};
+            delete summary[date];
+            localStorage.setItem('summary', JSON.stringify(summary));
+            loadSummary();
+        }
+
+        // Add task
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            if (taskText) {
+                displayTask(taskText, false);
+                taskInput.value = '';
+                saveTasks();
+            }
+        }
+
+        // Display task
+        function displayTask(text, completed) {
+            const li = document.createElement('li');
+            if (completed) li.classList.add('completed');
+            
+            li.innerHTML = `
+                <span>${text}</span>
+                <div>
+                    <button onclick="toggleComplete(this)">${completed ? 'Selesai' : 'Tandai Selesai'}</button>
+                    ${completed ? '<button class="delete" onclick="deleteTask(this)">Menghapus</button><button class="save" onclick="saveTask(this)">Menyimpan</button>' : '<button class="delete" onclick="deleteTask(this)">Hapus</button>'}
+                </div>
+            `;
+            taskList.appendChild(li);
+        }
+
+        // Toggle complete
+        function toggleComplete(button) {
+            const li = button.parentElement.parentElement;
+            li.classList.toggle('completed');
+            button.textContent = li.classList.contains('completed') ? 'Selesai' : 'Tandai Selesai';
+            // Show popup if task is now completed
+            if (li.classList.contains('completed')) {
+                alert('widihh hebat banget pacarku congratss😘');
+            }
+            // Update buttons for completed tasks
+            const buttonsDiv = li.querySelector('div:last-child');
+            if (li.classList.contains('completed')) {
+                buttonsDiv.innerHTML = '<button onclick="toggleComplete(this)">Selesai</button><button class="delete" onclick="deleteTask(this)">Menghapus</button><button class="save" onclick="saveTask(this)">Menyimpan</button>';
+            } else {
+                buttonsDiv.innerHTML = '<button onclick="toggleComplete(this)">Tandai Selesai</button><button class="delete" onclick="deleteTask(this)">Hapus</button>';
+            }
+            saveTasks();
+        }
+
+        // Delete task
+        function deleteTask(button) {
+            button.parentElement.parentElement.remove();
+            saveTasks();
+        }
+
+        // Save task to summary
+        function saveTask(button) {
+            const li = button.parentElement.parentElement;
+            const taskText = li.querySelector('span').textContent;
+            saveToSummary(taskText);
+            li.remove();
+            saveTasks();
+        }
+
+        // Load tasks on page load
+        loadTasks();
+    </script>
+</body>
+</html>
